@@ -6,7 +6,7 @@ import { LugaresModule } from './lugares/lugares.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ envFilePath: '.env.partner2' }),
+    ConfigModule.forRoot({ envFilePath: '.env.partner2', isGlobal: true }),
     PrismaModule,
     EventosModule,
     LugaresModule,
