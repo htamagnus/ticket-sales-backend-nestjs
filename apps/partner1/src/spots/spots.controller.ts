@@ -6,10 +6,15 @@ import {
   Patch,
   Param,
   Delete,
+  UseGuards,
+  NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { SpotsService } from '@app/core/spots/spots.service';
 import { CreateSpotRequest } from './request/create-spot.request';
 import { UpdateSpotRequest } from './request/update-spot.request';
+import { ReserveSpotRequest } from '../events/request/reserve-spot.request';
+import { AuthGuard } from '@app/core/auth/auth.guard';
 
 @Controller('events/:eventId/spots')
 export class SpotsController {
@@ -32,13 +37,13 @@ export class SpotsController {
   }
 
   @Get(':spotId')
-  findOne(@Param('id') spotId: string, @Param('eventId') eventId: string) {
+  findOne(@Param('spotId') spotId: string, @Param('eventId') eventId: string) {
     return this.spotsService.findOne(eventId, spotId);
   }
 
   @Patch(':spotId')
   update(
-    @Param('id') spotId: string,
+    @Param('spotId') spotId: string,
     @Param('eventId') eventId: string,
     @Body() updateSpotDto: UpdateSpotRequest,
   ) {
@@ -46,7 +51,28 @@ export class SpotsController {
   }
 
   @Delete(':spotId')
-  remove(@Param('id') spotId: string, @Param('eventId') eventId: string) {
+  remove(@Param('spotId') spotId: string, @Param('eventId') eventId: string) {
     return this.spotsService.remove(eventId, spotId);
+  }
+
+  @UseGuards(AuthGuard)
+  @Post(':spotId/reserve')
+  async reserveSpots(
+    @Body() dto: ReserveSpotRequest,
+    @Param('eventId') eventId: string,
+  ) {
+    try {
+      await this.spotsService.reserveSpots(eventId, dto.spots);
+      return { message: 'Spots reserved successfully' };
+    } catch (error) {
+      if (
+        error instanceof NotFoundException ||
+        error instanceof BadRequestException
+      ) {
+        throw error;
+      } else {
+        throw new BadRequestException(error.message);
+      }
+    }
   }
 }
